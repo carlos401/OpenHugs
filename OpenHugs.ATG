@@ -6,16 +6,15 @@ void debug (String str){
   System.err.println(str);
 }
 
-
 boolean isFunctionCall() {
  Token next = scanner.Peek();
  return la.kind == _variableName && next.kind == _lpar;
-}
+} 
 
 boolean isAsignment() {
  Token next = scanner.Peek();
  return la.kind == _variableName && next.kind == _asign;
-}
+} 
 
 /*-------------------------------------------------------------------------*/
 
@@ -32,21 +31,21 @@ CHARACTERS
   stringChar    = ANY - "\"" - '\\' - cr - lf.
 
 TOKENS
-
+  
   lineEnd = lf {{tab}lf}.
-
+  
   variableName = lower{lower}.
-
+  
   className = upper{lower}.
-
+  
   number = digit { digit } ['.' digit { digit } ].
-
-  stringLit =
+  
+  stringLit = 
   "\"" { stringChar
        | "\\" ( "b" | "t" | "n" | "f" | "r" | "\"" | "\'" | "\\" )
-       }
+       } 
   "\"".
-
+  
   /*----- operators and special characters needed in LL(1) resolvers --------------*/
   comma   = ",".
   dec     = "--".
@@ -62,18 +61,19 @@ TOKENS
   rbrack  = "]".
   rpar    = ")".
   tilde   = "~".
-  asign   = ":=".
-  mul     = "*".
-  div     = "/".
-  colon   = ":".
-  leq     = "<=".
-  geq     = ">=".
+  asign = ":=".
+  mul = "*".
+  div = "/".
+  colon = ":".
+  leq = "<=".
+  geq = ">=".
   less = "<".
   great = ">".
   equal = "==".
-
+  notEq = "!=".
+  
   /*----- Reserved words ----------------------------------------------------------*/
-
+  
   si = "SI".
   ciclo = "CICLO".
   mientras = "MIENTRAS".
@@ -85,9 +85,10 @@ TOKENS
   palabra = "PALABRA".
   returns = "RETORNA".
   bool = "LOGICO".
-  return = "RETORNAR".
   true = "VERDADERO".
   false = "FALSO".
+  
+
 
 COMMENTS FROM ";;" TO ";;"
 COMMENTS FROM ";" TO lf
@@ -98,21 +99,23 @@ IGNORE cr + tab
 
 PRODUCTIONS
 
-OpenHugs = {include} classDeclaration {classDeclaration} lineEnd
+OpenHugs = {include} classDeclaration {classDeclaration}
 (. debug("Programa"); .)
 .
 
 completeClassName = className{ dot className}[ colon (typeName|className) { comma (typeName|className)} ].
 
-include = incorporar className{ dot className} lineEnd
+tipoRetorno = numero | bool | palabra | ([className  colon]| numero | bool | palabra).
+
+include = incorporar className { dot className} lineEnd
 (. debug("include"); .)
 .
 
-classDeclaration = clase className [ ":" typeName {comma typeName}] classBlock [lineEnd]
+classDeclaration = clase className [ colon typeName {comma typeName}] classBlock [lineEnd]
 (. debug("Declaracion de una clase"); .)
 .
 
-functionDeclaration =  funcion variableName lpar [typeName variableName {comma typeName variableName}] rpar [returns completeClassName] [lineEnd] StatementBlock
+functionDeclaration =  funcion (variableName|className) lpar [typeName variableName {comma typeName variableName}] rpar [returns tipoRetorno] [lineEnd] StatementBlock
 (. debug("Declaracion de una funcion"); .)
 .
 
@@ -130,30 +133,29 @@ ifStatement = si lpar expresion rpar StatementBlock [ sino StatementBlock ].
 
 functionCall = variableName lpar [value { comma value } ]  rpar.
 
-value = number | boolValue | stringLit | variableName.
+value = number | true | false | stringLit | variableName.
 
 expresion =
   ( lpar expresion rpar
   | IF( isFunctionCall() )functionCall
-  | value )     [ minus expresion
+  | variableName
+  | number
+  | expresion   ( minus expresion
                 | plus expresion
                 | mul expresion
                 | div expresion
                 | leq expresion
                 | geq expresion
-                | less expresion
-                | great expresion
                 | inc
-                | dec ].
+                | dec )
+  ).
 
-boolValue = true | false .
-
-StatementBlock = lbrace [lineEnd] { ( IF( isFunctionCall() ) functionCall
-                                      | whileLoop
-                                      | ifStatement
-                                      | assignment
+StatementBlock = lbrace [lineEnd] { ( IF( isFunctionCall() ) functionCall 
+                                      | whileLoop 
+                                      | ifStatement 
+                                      | assignment 
                                       | variableDeclaration
-                                      | variableName ( inc | dec)
+                                      | variableName (inc | dec)
                                     ) lineEnd } rbrace .
 
 classBlock = lbrace lineEnd {(functionDeclaration | variableDeclaration) lineEnd} rbrace.
